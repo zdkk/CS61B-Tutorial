@@ -47,7 +47,7 @@ public class TimeSLList {
             }
             times.addLast(s.elapsedTime());
         }
-
+        System.out.println("Timing table for getLast");
         printTimingTable(Ns, times, opCounts);
     }
 

@@ -1,5 +1,6 @@
 package timingtest;
 import edu.princeton.cs.algs4.Stopwatch;
+import org.junit.Test;
 
 /**
  * Created by hug.
@@ -20,7 +21,6 @@ public class TimeAList {
     public static void main(String[] args) {
         timeAListConstruction();
     }
-
     public static void timeAListConstruction() {
         // TODO: YOUR CODE HERE
         AList<Integer> Ns = new AList<>();
@@ -42,6 +42,7 @@ public class TimeAList {
             }
             times.addLast(s.elapsedTime());
         }
+        System.out.println("Timing table for addLast");
         printTimingTable(Ns, times, Ns);
     }
 }
