@@ -4,10 +4,11 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 /**
- * @author: zdkk
- * @create 2022-09-15 10:06
+ * zdkk
+ * 2022-09-15 10:06
  */
 public class MaxArrayDeque<T> extends ArrayDeque<T> {
+
 	private Comparator<T> comparator;
 	public MaxArrayDeque(Comparator<T> c) {
 		super();

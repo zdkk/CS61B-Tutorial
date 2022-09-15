@@ -1,11 +1,14 @@
 package deque;
 
 import java.util.Iterator;
+import java.util.Objects;
+
 /**
  * zdkk
  * 2022-09-14 22:17
  */
-public class ArrayDeque<T> implements Deque<T> {
+public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
+
 	private T[] items;
 	private int hh, tt;
 
@@ -98,22 +101,50 @@ public class ArrayDeque<T> implements Deque<T> {
 
 	@Override
 	public boolean equals(Object o) {
-		if (o == null) {
-			return false;
+		if (this == o) {
+			return true;
 		}
 		if (!(o instanceof Deque)) {
 			return false;
 		}
-		Deque<T> t = (Deque<T>) o;
-		if (t.size() != size()) {
+		boolean equal = (o.getClass() == ArrayDeque.class)
+				? equalsArrayDeque((ArrayDeque<?>) o)
+				: equalsRange((Deque<?>) o);
+
+		return equal;
+	}
+
+	private boolean equalsRange(Deque<?> other) {
+		if (size() != other.size()) {
 			return false;
 		}
-		for (int i = 0; i < size(); i++) {
-			if (get(i) != t.get(i)) {
-				return false;
+		boolean equal = true;
+		Iterator<T> a = iterator();
+		Iterator<?> b = other.iterator();
+		while (a.hasNext() && b.hasNext()) {
+			if (!Objects.equals(a.next(), b.next())) {
+				equal = false;
+				break;
 			}
 		}
-		return true;
+		return equal && !a.hasNext() && !b.hasNext();
+	}
+
+	private boolean equalsArrayDeque(ArrayDeque<?> other) {
+		final int s = other.size();
+		if (this.size() != s) {
+			return false;
+		}
+		boolean equal = true;
+		Iterator<T> a = iterator();
+		Iterator<?> b = other.iterator();
+		while (a.hasNext() && b.hasNext()) {
+			if (!Objects.equals(a.next(), b.next())) {
+				equal = false;
+				break;
+			}
+		}
+		return equal && !a.hasNext() && !b.hasNext();
 	}
 
 	@Override
