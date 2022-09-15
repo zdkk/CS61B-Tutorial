@@ -133,15 +133,13 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
 			return false;
 		}
 		boolean equal = true;
-		Iterator<T> a = iterator();
-		Iterator<?> b = other.iterator();
-		while (a.hasNext() && b.hasNext()) {
-			if (!Objects.equals(a.next(), b.next())) {
+		for (int i = 0; i < size(); i++) {
+			if (get(i) != other.get(i)) {
 				equal = false;
 				break;
 			}
 		}
-		return equal && !a.hasNext() && !b.hasNext();
+		return equal;
 	}
 
 	private boolean equalsLinkedListDeque(LinkedListDeque<?> other) {
