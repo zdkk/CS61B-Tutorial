@@ -101,7 +101,7 @@ public class ArrayDeque<T> {
 		return sb.toString();
 	}
 
-	private int size() {
+	public int size() {
 		if (hh <= tt)
 			return tt - hh;
 		else return tt + items.length - hh;
