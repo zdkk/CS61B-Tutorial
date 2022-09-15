@@ -1,22 +1,16 @@
 package deque;
 
 import java.util.Iterator;
-
 /**
- * @author: zdkk
- * @create 2022-09-14 22:17
+ * zdkk
+ * 2022-09-14 22:17
  */
 public class ArrayDeque<T> implements Deque<T> {
 	private T[] items;
 	private int hh, tt;
 
 	public ArrayDeque() {
-		items = (T[])(new Object[8]);
-		hh = tt = 0;
-	}
-
-	public ArrayDeque(int capacity) {
-		items = (T[])(new Object[capacity + 1]);
+		items = (T[]) (new Object[8]);
 		hh = tt = 0;
 	}
 
@@ -40,10 +34,6 @@ public class ArrayDeque<T> implements Deque<T> {
 		}
 	}
 
-	@Override
-	public boolean isEmpty() {
-		return hh == tt;
-	}
 
 	@Override
 	public void printDeque() {
@@ -83,14 +73,14 @@ public class ArrayDeque<T> implements Deque<T> {
 
 	@Override
 	public T get(int idx) {
-		if (idx < 0 || idx >= size()){
+		if (idx < 0 || idx >= size()) {
 			return null;
 		}
 		return items[(hh + idx) % items.length];
 	}
 
 	public Iterator<T> iterator() {
-		return new Iterator<T>() {
+		return new Iterator<>() {
 			int cur = hh;
 			@Override
 			public boolean hasNext() {
@@ -114,26 +104,23 @@ public class ArrayDeque<T> implements Deque<T> {
 		if (!(o instanceof Deque)) {
 			return false;
 		}
-		return toString().equals(o.toString());
-	}
-
-	@Override
-	public String toString() {
-		int idx = hh;
-		StringBuilder sb = new StringBuilder();
-		while (idx != tt) {
-			sb.append(items[idx].toString() + " ");
-			idx = (idx + 1) % items.length;
+		Deque<T> t = (Deque<T>) o;
+		if (t.size() != size()) {
+			return false;
 		}
-		return sb.toString();
+		for (int i = 0; i < size(); i++) {
+			if (get(i) != t.get(i)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@Override
 	public int size() {
-		if (hh <= tt){
+		if (hh <= tt) {
 			return tt - hh;
-		}
-		else {
+		} else {
 			return tt + items.length - hh;
 		}
 	}
@@ -144,7 +131,7 @@ public class ArrayDeque<T> implements Deque<T> {
 	}
 
 	private void resize(int length) {
-		T[] a = (T[])(new Object[length]);
+		T[] a = (T[]) (new Object[length]);
 		for (int i = 0, j = hh; i < size(); i++, j = (j + 1) % items.length) {
 			a[i] = items[j];
 		}

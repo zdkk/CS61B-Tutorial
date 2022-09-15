@@ -1,9 +1,6 @@
 package deque;
 
 import org.junit.Test;
-
-import java.lang.reflect.Array;
-
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 

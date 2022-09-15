@@ -1,14 +1,13 @@
 package deque;
 
 import java.util.Iterator;
-
 /**
  * @author: zdkk
  * @create 2022-09-14 21:42
  */
-public class LinkedListDeque<T> implements Deque<T> {
-	class Node<T> {
-		Node<T> left, right;
+public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
+	private class Node {
+		Node left, right;
 		T val;
 
 		Node(T val) {
@@ -16,12 +15,12 @@ public class LinkedListDeque<T> implements Deque<T> {
 		}
 	}
 
-	private Node<T> head, tail;
+	private final Node head, tail;
 	private int size;
 
 	public LinkedListDeque() {
-		head = new Node<>(null);
-		tail = new Node<>(null);
+		head = new Node(null);
+		tail = new Node(null);
 		head.right = tail;
 		tail.left = head;
 		size = 0;
@@ -37,10 +36,6 @@ public class LinkedListDeque<T> implements Deque<T> {
 		add(tail.left, item);
 	}
 
-	@Override
-	public boolean isEmpty() {
-		return size == 0;
-	}
 
 	@Override
 	public void printDeque() {
@@ -77,7 +72,7 @@ public class LinkedListDeque<T> implements Deque<T> {
 		if (idx >= size || idx < 0) {
 			return null;
 		}
-		Node<T> u = head.right;
+		Node u = head.right;
 		while (idx-- > 0) {
 			u = u.right;
 		}
@@ -91,16 +86,17 @@ public class LinkedListDeque<T> implements Deque<T> {
 		return dfs(idx, head.right);
 	}
 
-	private T dfs(int idx, Node<T> cur) {
+	private T dfs(int idx, Node cur) {
 		if (idx == 0) {
 			return cur.val;
 		}
 		return dfs(idx - 1, cur.right);
 	}
 
+	@Override
 	public Iterator<T> iterator() {
-		return new Iterator<T>() {
-			Node<T> cur = head.right;
+		return new Iterator<>() {
+			Node cur = head.right;
 			@Override
 			public boolean hasNext() {
 				return cur != tail;
@@ -108,7 +104,7 @@ public class LinkedListDeque<T> implements Deque<T> {
 
 			@Override
 			public T next() {
-				Node<T> res = cur;
+				Node res = cur;
 				cur = cur.right;
 				return res.val;
 			}
@@ -123,7 +119,16 @@ public class LinkedListDeque<T> implements Deque<T> {
 		if (!(o instanceof Deque)) {
 			return false;
 		}
-		return toString().equals(o.toString());
+		Deque<T> t = (Deque<T>) o;
+		if (t.size() != size()) {
+			return false;
+		}
+		for (int i = 0; i < size(); i++) {
+			if (get(i) != t.get(i)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@Override
@@ -131,26 +136,13 @@ public class LinkedListDeque<T> implements Deque<T> {
 		return size;
 	}
 
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		Node<T> u = head.right;
-		while (u != tail) {
-			sb.append(u.val.toString() + " ");
-			u = u.right;
-		}
-		return sb.toString();
-	}
-
-
-	private void remove(Node<T> u) {
+	private void remove(Node u) {
 		u.right.left = u.left;
 		u.left.right = u.right;
 		size--;
 	}
-	private void add(Node<T> u, T item) {
-		Node<T> t = new Node<>(item);
+	private void add(Node u, T item) {
+		Node t = new Node(item);
 		t.right = u.right;
 		t.left = u;
 		u.right.left = t;
