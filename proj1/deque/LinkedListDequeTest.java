@@ -114,4 +114,23 @@ public class LinkedListDequeTest {
         }
 
     }
+
+    @Test
+    public void equalsTest() {
+        LinkedListDeque<Integer> a = new LinkedListDeque<>();
+        LinkedListDeque<Integer> b = new LinkedListDeque<>();
+        LinkedListDeque<String> c = new LinkedListDeque<>();
+        LinkedListDeque<Integer> d = new LinkedListDeque<>();
+        for (int i = 0; i < 10; i++)
+            a.addFirst(i);
+        for (int i = 0; i < 10; i++)
+            b.addLast(i);
+        for (int i = 0; i < 10; i++)
+            c.addFirst(i + " ");
+        for (int i = 0; i < 10; i++)
+            d.addFirst(i);
+        assertFalse("a == b ? ", a.equals(b));
+        assertFalse("a == c ? ", a.equals(c));
+        assertTrue("a == d ? ", a.equals(d));
+    }
 }

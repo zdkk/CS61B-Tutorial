@@ -1,13 +1,12 @@
 package deque;
 
-import java.util.Deque;
 import java.util.Iterator;
 
 /**
  * @author: zdkk
  * @create 2022-09-14 21:42
  */
-public class LinkedListDeque<T> {
+public class LinkedListDeque<T> implements Deque<T> {
 	class Node<T> {
 		Node<T> left, right;
 		T val;
@@ -28,18 +27,22 @@ public class LinkedListDeque<T> {
 		size = 0;
 	}
 
+	@Override
 	public void addFirst(T item) {
 		add(head, item);
 	}
 
+	@Override
 	public void addLast(T item) {
 		add(tail.left, item);
 	}
 
+	@Override
 	public boolean isEmpty() {
 		return size == 0;
 	}
 
+	@Override
 	public void printDeque() {
 		Node u = head.right;
 		while (u != tail) {
@@ -49,27 +52,50 @@ public class LinkedListDeque<T> {
 		System.out.println();
 	}
 
+	@Override
 	public T removeFirst() {
-		if (isEmpty()) return null;
+		if (isEmpty()) {
+			return null;
+		}
 		T res = head.right.val;
 		remove(head.right);
 		return res;
 	}
 
+	@Override
 	public T removeLast() {
-		if (isEmpty()) return null;
+		if (isEmpty()) {
+			return null;
+		}
 		T res = tail.left.val;
 		remove(tail.left);
 		return res;
 	}
 
+	@Override
 	public T get(int idx) {
-		if (idx >= size || idx < 0) return null;
+		if (idx >= size || idx < 0) {
+			return null;
+		}
 		Node<T> u = head.right;
 		while (idx-- > 0) {
 			u = u.right;
 		}
 		return u.val;
+	}
+
+	public T getRecursive(int idx) {
+		if (idx >= size || idx < 0) {
+			return null;
+		}
+		return dfs(idx, head.right);
+	}
+
+	private T dfs(int idx, Node<T> cur) {
+		if (idx == 0) {
+			return cur.val;
+		}
+		return dfs(idx - 1, cur.right);
 	}
 
 	public Iterator<T> iterator() {
@@ -89,13 +115,18 @@ public class LinkedListDeque<T> {
 		};
 	}
 
+	@Override
 	public boolean equals(Object o) {
-		if (o == null) return false;
-		if (!(o instanceof LinkedListDeque))
+		if (o == null) {
 			return false;
+		}
+		if (!(o instanceof Deque)) {
+			return false;
+		}
 		return toString().equals(o.toString());
 	}
 
+	@Override
 	public int size() {
 		return size;
 	}
