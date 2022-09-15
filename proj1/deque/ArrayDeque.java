@@ -9,8 +9,8 @@ import java.util.Objects;
  */
 public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
-	private T[] items;
-	private int hh, tt;
+    private T[] items;
+    private int hh, tt;
 
 	public ArrayDeque() {
 		items = (T[]) (new Object[8]);

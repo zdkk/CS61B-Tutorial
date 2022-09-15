@@ -8,8 +8,7 @@ import java.util.Objects;
  * 2022-09-14 21:42
  */
 public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
-
-	private class Node {
+    private class Node {
 		Node left, right;
 		T val;
 

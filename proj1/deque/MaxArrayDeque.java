@@ -8,8 +8,7 @@ import java.util.Iterator;
  * 2022-09-15 10:06
  */
 public class MaxArrayDeque<T> extends ArrayDeque<T> {
-
-	private Comparator<T> comparator;
+    private Comparator<T> comparator;
 	public MaxArrayDeque(Comparator<T> c) {
 		super();
 		this.comparator = c;
