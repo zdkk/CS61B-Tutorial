@@ -20,12 +20,10 @@ public class TestArrayDequeEC {
                 a.addFirst(i);
                 b.addFirst(i);
                 System.out.println("addFirst(" + i + ")");
-                assertEquals("addFirst(" + i + ")", a.get(0), b.get(0));
             } else if (x == 1){
                 a.addLast(i);
                 b.addLast(i);
                 System.out.println("addLast(" + i + ")");
-                assertEquals("addLast(" + i + ")", a.get(a.size() - 1), b.get(b.size() - 1));
             } else if (x == 2 && a.size() > 0) {
                 Integer p = a.removeFirst();
                 Integer q = b.removeFirst();
