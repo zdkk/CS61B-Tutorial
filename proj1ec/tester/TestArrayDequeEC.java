@@ -14,7 +14,7 @@ public class TestArrayDequeEC {
     public void test1() {
         StudentArrayDeque<Integer> b = new StudentArrayDeque<>();
         ArrayDequeSolution<Integer> a = new ArrayDequeSolution<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1000; i++) {
             int x = StdRandom.uniform(0, 3);
             if (x == 0) {
                 a.addFirst(i);
