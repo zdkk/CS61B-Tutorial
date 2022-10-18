@@ -2,8 +2,6 @@ package capers;
 
 import java.io.File;
 
-import javax.rmi.CORBA.Util;
-
 import static capers.Utils.*;
 
 /**
