@@ -103,7 +103,8 @@ public class Repository {
      */
     public static void add(String name) {
         checkInit();
-        
+
+        name = unifiedFileName(name);
         // find the file in workspace
         File file = getFileFromCWD(name);
         // check if file:"name" exists
@@ -132,7 +133,10 @@ public class Repository {
      */
     public static void commit(String message) {
         checkInit();
-
+        if (message.length() == 0) {
+            System.out.println("Please enter a commit message.");
+            System.exit(0);
+        }
         currCommit = readCurrCommit();
         addStage = readAddStage();
         removeStage = readRemoveStage();
@@ -141,7 +145,7 @@ public class Repository {
             System.exit(0);
         }
         currCommit = getNewCommit(message);
-        updateHeads();
+        updateCurrBranch();
         addStage.clear();
         removeStage.clear();
         save(ADD_STAGE_FILE, addStage);
@@ -159,9 +163,8 @@ public class Repository {
     public static void rm(String name) {
         checkInit();
 
-        // Unified filename
+        name = unifiedFileName(name);
         File file = getFileFromCWD(name);
-        name = file.getName();
         currCommit = readCurrCommit();
         addStage = readAddStage();
         removeStage = readRemoveStage();
@@ -288,6 +291,134 @@ public class Repository {
         System.out.println();
     }
 
+    public static void checkout(String branchName) {
+        checkInit();
+        File branchFile = Utils.join(REFS_DIR, branchName);
+        if (!branchFile.exists()) {
+            System.out.println("No such branch exists.");
+            System.exit(0);
+        }
+
+        String currBranchName = readCurrBranch();
+        if (branchName.equals(currBranchName)) {
+            System.out.println("No need to checkout the current branch.");
+            System.exit(0);
+        }
+
+        Commit targetCommit = readCommitBySha1(Utils.readContentsAsString(branchFile));
+        currCommit = readCurrCommit();
+
+        boolean flag = true;
+        List<String> targetFileNames = new ArrayList<>(targetCommit.getBlobs().keySet());
+        Set<String> fileNames = new HashSet<>(currCommit.getBlobs().keySet());
+        for (String s : targetFileNames) {
+            if (fileNames.contains(s))
+                continue;
+            else {
+                File file = getFileFromCWD(s);
+                if (!file.exists()) continue;
+                Blob blob = new Blob(s);
+                if (blob.getSha1() != targetCommit.getBlobs().get(s)) {
+                    flag = false;
+                    break;
+                }
+            }
+        }
+
+        if (!flag) {
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(0);
+        }
+
+        checkoutModifyWorkspace(targetCommit, currCommit);
+        clearStage();
+        currCommit = targetCommit;
+        updateHEAD(branchName);
+    }
+
+    public static void checkout(String mark, String fileName) {
+        if (!mark.equals("--")) {
+            System.out.println("Incorrect operands.");
+            System.exit(0);
+        }
+        checkInit();
+        fileName = unifiedFileName(fileName);
+        currCommit = readCurrCommit();
+        if (!currCommit.containsBlob(fileName)) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(0);
+        }
+        File targetFile = Utils.join(CWD, "fileName");
+        File originFile = Utils.join(OBJECTS_DIR, currCommit.getBlobs().get(fileName));
+        Utils.writeContents(targetFile, Utils.readObject(originFile, Blob.class).getBytes());
+    }
+
+    public static void checkout(String commitID, String mark, String fileName) {
+        if (!mark.equals("--")) {
+            System.out.println("Incorrect operands.");
+            System.exit(0);
+        }
+        checkInit();
+        fileName = unifiedFileName(fileName);
+        List<String> files = plainFilenamesIn(OBJECTS_DIR);
+        String res = null;
+        int len = commitID.length();
+        for (String s : files) {
+            if (commitID.equals(s.substring(0, len))) {
+                res = s;
+                break;
+            }
+        }
+
+        if (res == null) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+
+        Commit commit = readCommitBySha1(res);
+        if (!commit.containsBlob(fileName)) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(0);
+        }
+        File targetFile = Utils.join(CWD, "fileName");
+        File originFile = Utils.join(OBJECTS_DIR, currCommit.getBlobs().get(fileName));
+        Utils.writeContents(targetFile, Utils.readObject(originFile, Blob.class).getBytes());
+    }
+
+    private static void clearStage() {
+        addStage = new Stage();
+        removeStage = new Stage();
+        save(ADD_STAGE_FILE, addStage);
+        save(REMOVE_STAGE_FILE, removeStage);
+    }
+    private static void checkoutModifyWorkspace(Commit targetCommit, Commit currCommit) {
+        Map<String, String> targetBlobs = targetCommit.getBlobs();
+        Map<String, String> currBlobs = currCommit.getBlobs();
+        for (String s : targetBlobs.keySet()) {
+            File file = Utils.join(CWD, s);
+            String content = readBlobContentBySha1(targetBlobs.get(s));
+            Utils.writeContents(file, content);
+        }
+        for (String s : currBlobs.keySet()) {
+            if (!targetBlobs.containsKey(s)) {
+                File file = Utils.join(CWD, s);
+                file.delete();
+            }
+        }
+    }
+
+
+    private static String readBlobContentBySha1(String name) {
+        File file = Utils.join(OBJECTS_DIR, name);
+        Blob blob = readObject(file, Blob.class);
+        return blob.getBytes();
+    }
+
+    private  static Commit readCommitBySha1(String sha1) {
+        File file = Utils.join(OBJECTS_DIR, sha1);
+        return Utils.readObject(file, Commit.class);
+    }
+
     private static Commit getNewCommit(String message) {
         Map<String, String> blobs = new HashMap<>(currCommit.getBlobs());
         List<String> parents = new ArrayList<>();
@@ -303,7 +434,10 @@ public class Repository {
         return commit;
     }
 
-    private static void updateHeads() {
+    private static void updateHEAD(String branchName) {
+        Utils.writeContents(HEAD_FILE, branchName);
+    }
+    private static void updateCurrBranch() {
         String currBranch = readCurrBranch();
         File currBranchFile = Utils.join(HEADS_DIR, currBranch);
         Utils.writeContents(currBranchFile, currCommit.getSha1());
@@ -378,6 +512,11 @@ public class Repository {
     private static void initHeads() {
         File masterFile = join(HEADS_DIR, "master");
         Utils.writeContents(masterFile, currCommit.getSha1());
+    }
+
+    private static String  unifiedFileName(String name) {
+        File file = getFileFromCWD(name);
+        return file.getName();
     }
 
     private static File getFileFromCWD(String file) {

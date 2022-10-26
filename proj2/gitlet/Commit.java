@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.Serializable;
 import java.io.File;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -92,7 +93,9 @@ public class Commit implements Serializable {
     }
 
     private String calcTimestamp(Date date) {
-        SimpleDateFormat sdf = new SimpleDateFormat("E yyyy-MM-dd HH:mm:ss z");
+        // DATE "Date: \w\w\w \w\w\w \d+ \d\d:\d\d:\d\d \d\d\d\d [-+]\d\d\d\d"
+        // Date: Wed Dec 31 16:00:00 1969 -0800
+        DateFormat sdf = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.US);
         return sdf.format(date);
     }
 }

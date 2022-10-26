@@ -33,10 +33,7 @@ public class Main {
                 add(args[1]);
                 break;
             case "commit":
-                 if (args.length == 1) {
-                     System.out.println("Please enter a commit message.");
-                     System.exit(0);
-                 }
+                 checkargs(args, 2);
                  commit(args[1]);
                  break;
             case "rm":
@@ -60,7 +57,16 @@ public class Main {
                  status();
                  break;
             case "checkout":
-
+                 if (args.length == 2) {
+                     checkout(args[1]);
+                 } else if (args.length == 3){
+                     checkout(args[1], args[2]);
+                 } else if (args.length == 4) {
+                     checkout(args[1], args[2], args[3]);
+                 } else {
+                     System.out.println("Incorrect operands.");
+                     System.exit(0);
+                 }
                  break;
             // case "branch":
             //     checkargs(args, 2);
