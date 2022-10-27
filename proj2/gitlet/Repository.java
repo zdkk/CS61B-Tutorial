@@ -286,9 +286,74 @@ public class Repository {
         }
         System.out.println();
         System.out.println("=== Modifications Not Staged For Commit ===");
+        for (String s : getModifiedFile()) {
+            System.out.println(s);
+        }
         System.out.println();
         System.out.println("=== Untracked Files ===");
+        for (String s : getUntrackedFile()) {
+            System.out.println(s);
+        }
         System.out.println();
+    }
+
+    private static List<String> getModifiedFile() {
+        currCommit = readCurrCommit();
+        addStage = readAddStage();
+        removeStage = readRemoveStage();
+
+        Map<String, String> map = new HashMap<>();
+
+        for (String fileName : currCommit.getBlobs().keySet()) {
+            File file = Utils.join(CWD, fileName);
+            if (!addStage.getBlobs().containsKey(fileName)) {
+                if (file.exists()) {
+                    Blob blob = new Blob(fileName);
+                    if (blob.getSha1() != currCommit.getBlobs().get(fileName)) {
+                        map.put(fileName, "(modified)");
+                    }
+                }
+            }
+            if (!removeStage.getBlobs().containsKey(fileName)) {
+                if (!file.exists()) {
+                    map.put(fileName, "(deleted)");
+                }
+            }
+        }
+
+        for (String fileName : addStage.getBlobs().keySet()) {
+            File file = Utils.join(CWD, fileName);
+            if (file.exists()) {
+                Blob blob = new Blob(fileName);
+                if (blob.getSha1() != addStage.getBlobs().get(fileName)) {
+                    map.put(fileName, "(modified)");
+                }
+            } else {
+                map.put(fileName, "(deleted)");
+            }
+        }
+
+        List<String> res = new ArrayList<>();
+        for (String s : map.keySet()) {
+            res.add(s + " " + map.get(s));
+        }
+        return res;
+    }
+
+    private static List<String> getUntrackedFile() {
+        currCommit = readCurrCommit();
+        addStage = readAddStage();
+        removeStage = readRemoveStage();
+
+        List<String> res = new ArrayList<>();
+        for (String fileName : Utils.plainFilenamesIn(CWD)) {
+            if (!addStage.getBlobs().containsKey(fileName) && !currCommit.getBlobs().containsKey(fileName)) {
+                res.add(fileName);
+            } else if (removeStage.getBlobs().containsKey(fileName)) {
+                res.add(fileName);
+            }
+        }
+        return res;
     }
 
     public static void checkout(String branchName) {
