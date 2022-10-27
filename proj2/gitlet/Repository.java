@@ -508,17 +508,19 @@ public class Repository {
             System.out.println("Current branch fast-forwarded.");
             System.exit(0);
         }
-        boolean flag = checkUntrackedFileExists(commit, currCommit, ancestor);
-        if (flag) {
+        boolean flag = dealMerge(commit, currCommit, ancestor, branchName);
+        if (!flag) {
             System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
             System.exit(0);
         }
-        currCommit = dealMerge(commit, currCommit, ancestor, branchName);
-        updateCurrBranch();
-        save(ADD_STAGE_FILE, addStage);
     }
 
-    private static Commit dealMerge(Commit commit, Commit currCommit, Commit ancestor, String branchName) {
+    private static void changeWorkSpaceFile(String fileName, String sha1) {
+        File file = Utils.join(CWD, fileName);
+        String s = readBlobContentBySha1(sha1);
+        Utils.writeContents(file, s);
+    }
+    private static boolean dealMerge(Commit commit, Commit currCommit, Commit ancestor, String branchName) {
         Map<String, String> map = new HashMap<>();
         boolean flag = false;
         for (String fileName : ancestor.getBlobs().keySet()) {
@@ -528,9 +530,7 @@ public class Repository {
             if (currCommitSha1 != null && sha1.equals(commitSha1) && !sha1.equals(currCommitSha1)) {
                 map.put(fileName, currCommitSha1);
             } else if (commitSha1 != null && !sha1.equals(commitSha1) && sha1.equals(currCommitSha1)) {
-                File file = Utils.join(CWD, fileName);
-                String s = readBlobContentBySha1(commitSha1);
-                Utils.writeContents(file, s);
+                map.put(fileName, commitSha1);
                 addStage.getBlobs().put(fileName, commitSha1);
             } else if (commitSha1 != null && commitSha1.equals(currCommitSha1)) {
                 map.put(fileName, currCommitSha1);
@@ -541,12 +541,18 @@ public class Repository {
                 if (file.exists()) {
                     file.delete();
                 }
+                removeStage.getBlobs().put(fileName, currCommitSha1);
             } else if (currCommitSha1 == null && sha1.equals(commitSha1)) {
                 continue;
             } else {
                 Blob blob = new Blob(fileName, generateBlobByMerge(readBlobContentBySha1(currCommitSha1), readBlobContentBySha1(commitSha1)));
+                File file = Utils.join(CWD, fileName);
+                if (file.exists() && currCommitSha1 == null && !blob.getSha1().equals(commitSha1)) {
+                    return false;
+                }
                 blob.save();
                 map.put(fileName, blob.getSha1());
+                addStage.getBlobs().put(fileName, blob.getSha1());
                 flag = true;
             }
         }
@@ -558,8 +564,10 @@ public class Repository {
             String currCommitSha1 = currCommit.getBlobs().getOrDefault(fileName, null);
             if (currCommitSha1 == null) {
                 File file = Utils.join(CWD, fileName);
-                String s = readBlobContentBySha1(commitSha1);
-                Utils.writeContents(file, s);
+                if (file.exists() && !new Blob(fileName).getSha1().equals(commitSha1)) {
+                    return false;
+                }
+                map.put(fileName, commitSha1);
                 addStage.getBlobs().put(fileName, commitSha1);
             } else {
                 if (commitSha1.equals(currCommitSha1)) {
@@ -568,80 +576,53 @@ public class Repository {
                     Blob blob = new Blob(fileName, generateBlobByMerge(readBlobContentBySha1(currCommitSha1), readBlobContentBySha1(commitSha1)));
                     blob.save();
                     map.put(fileName, blob.getSha1());
+                    addStage.getBlobs().put(fileName, blob.getSha1());
                     flag = true;
                 }
             }
         }
 
-        for (String fileName : currCommit.getBlobs().keySet()) {
-            String sha1 = ancestor.getBlobs().getOrDefault(fileName, null);
-            if (sha1 != null) continue;
-            String commitSha1 = commit.getBlobs().getOrDefault(fileName, null);
-            String currCommitSha1 = currCommit.getBlobs().getOrDefault(fileName, null);
-            if (commitSha1 == null) {
-                map.put(fileName, currCommitSha1);
-            }
+        for (String fileName : map.keySet()) {
+            String sha1 = map.get(fileName);
+            String s = readBlobContentBySha1(sha1);
+            Utils.writeContents(Utils.join(CWD, fileName), s);
         }
 
         String message = String.format("Merged %s into %s.", branchName, readCurrBranch());
         if (flag) {
             System.out.println("Encountered a merge conflict.");
         }
+        if (addStage.getBlobs().isEmpty() && removeStage.getBlobs().isEmpty()) {
+            System.out.println("No changes added to the commit.");
+        }
         List<String> parents = new ArrayList<>();
         parents.add(currCommit.getSha1());
         parents.add(commit.getSha1());
-        Commit res = new Commit(message, map, parents);
+        Map<String, String> blobs = new HashMap<>(currCommit.getBlobs());
+        blobs.putAll(addStage.getBlobs());
+        for (Map.Entry<String, String> entry : removeStage.getBlobs().entrySet()) {
+            blobs.remove(entry.getKey());
+        }
+        Commit res = new Commit(message, blobs, parents);
         res.save();
-        return res;
+        Repository.currCommit = res;
+        updateCurrBranch();
+        return true;
     }
 
     private static String generateBlobByMerge(String curr, String target) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<<<<<<< HEAD\n");
-        sb.append(curr + "\n");
-        sb.append("=======\n");
-        sb.append(target +  "\n");
-        sb.append(">>>>>>>");
-        return sb.toString();
+        String s = "<<<<<<< HEAD\n" +
+                curr + "\n" +
+                "=======\n" +
+                target + "\n" +
+                ">>>>>>>";
+        return s;
     }
 
-    private static boolean checkUntrackedFileExists(Commit commit, Commit currCommit, Commit ancestor) {
-        for (String fileName : ancestor.getBlobs().keySet()) {
-            String sha1 = ancestor.getBlobs().get(fileName);
-            String commitSha1 = commit.getBlobs().getOrDefault(fileName, null);
-            String currCommitSha1 = currCommit.getBlobs().getOrDefault(fileName, null);
-            if (commitSha1 != null && !sha1.equals(commitSha1) && sha1.equals(currCommitSha1)) {
-                File file = Utils.join(CWD, fileName);
-                if (file.exists()) {
-                    Blob blob = new Blob(fileName);
-                    if (!commitSha1.equals(blob.getSha1())) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        for (String fileName : commit.getBlobs().keySet()) {
-            String sha1 = ancestor.getBlobs().getOrDefault(fileName, null);
-            if (sha1 != null) continue;
-            String commitSha1 = commit.getBlobs().getOrDefault(fileName, null);
-            String currCommitSha1 = currCommit.getBlobs().getOrDefault(fileName, null);
-            if (currCommitSha1 == null) {
-                File file = Utils.join(CWD, fileName);
-                if (file.exists()) {
-                    Blob blob = new Blob(fileName);
-                    if (!commitSha1.equals(blob.getSha1())) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
 
     private static Commit findAncestor(Commit a, Commit b) {
         Commit p = a, q = b;
-        while (!p.getSha1().equals(q.getSha1())) {
+        while (p == null && q != null || p != null && q == null || !p.getSha1().equals(q.getSha1())) {
             if (p == null) {
                 p = b;
             } else {
