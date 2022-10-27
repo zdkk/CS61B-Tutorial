@@ -80,10 +80,10 @@ public class Main {
                  checkargs(args, 2);
                  reset(args[1]);
                  break;
-            // case "merge":
-            //     checkargs(args, 2);
-            //     merge(args[1]);
-            //     break;
+             case "merge":
+                 checkargs(args, 2);
+                 merge(args[1]);
+                 break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);

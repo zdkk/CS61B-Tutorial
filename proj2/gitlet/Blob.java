@@ -19,6 +19,12 @@ public class Blob implements Serializable {
         this.sha1 = generatedSha1();
     }
 
+    public Blob(String fileName, String bytes) {
+        this.fileName = fileName;
+        this.bytes = bytes;
+        this.sha1 = generatedSha1();
+    }
+
     public String getFileName() {
         return fileName;
     }

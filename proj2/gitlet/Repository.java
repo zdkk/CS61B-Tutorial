@@ -384,26 +384,6 @@ public class Repository {
         updateHEAD(branchName);
     }
 
-    private static boolean checkUntrackedFileExists(Commit currCommit, Commit targetCommit) {
-        boolean flag = true;
-        List<String> targetFileNames = new ArrayList<>(targetCommit.getBlobs().keySet());
-        Set<String> fileNames = new HashSet<>(currCommit.getBlobs().keySet());
-        for (String s : targetFileNames) {
-            if (fileNames.contains(s))
-                continue;
-            else {
-                File file = getFileFromCWD(s);
-                if (!file.exists()) continue;
-                Blob blob = new Blob(s);
-                if (blob.getSha1() != targetCommit.getBlobs().get(s)) {
-                    flag = false;
-                    break;
-                }
-            }
-        }
-        return flag;
-    }
-
     public static void checkout(String mark, String fileName) {
         if (!mark.equals("--")) {
             System.out.println("Incorrect operands.");
@@ -494,6 +474,204 @@ public class Repository {
         clearStage();
         currCommit = targetCommit;
         updateCurrBranch();
+    }
+
+    public static void merge(String branchName) {
+        checkInit();
+        addStage = readAddStage();
+        removeStage = readRemoveStage();
+        if (!addStage.isEmpty() || !removeStage.isEmpty()) {
+            System.out.println("You have uncommitted changes.");
+            System.exit(0);
+        }
+        File branchFile = Utils.join(HEADS_DIR, branchName);
+        if (!branchFile.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+        if (branchFile.getName().equals(readCurrBranch())) {
+            System.out.println("Cannot merge a branch with itself.");
+            System.exit(0);
+        }
+
+        currCommit = readCurrCommit();
+        Commit commit = readCommitBySha1(Utils.readContentsAsString(branchFile));
+        Commit ancestor = findAncestor(currCommit, commit);
+        if (ancestor.getSha1().equals(commit.getSha1())) {
+            System.out.println("Given branch is an ancestor of the current branch.");
+            System.exit(0);
+        }
+        if (ancestor.getSha1().equals(currCommit.getSha1())) {
+            currCommit = commit;
+            updateCurrBranch();
+            System.out.println("Current branch fast-forwarded.");
+            System.exit(0);
+        }
+        boolean flag = checkUntrackedFileExists(commit, currCommit, ancestor);
+        if (flag) {
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(0);
+        }
+        currCommit = dealMerge(commit, currCommit, ancestor, branchName);
+        updateCurrBranch();
+        save(ADD_STAGE_FILE, addStage);
+    }
+
+    private static Commit dealMerge(Commit commit, Commit currCommit, Commit ancestor, String branchName) {
+        Map<String, String> map = new HashMap<>();
+        boolean flag = false;
+        for (String fileName : ancestor.getBlobs().keySet()) {
+            String sha1 = ancestor.getBlobs().get(fileName);
+            String commitSha1 = commit.getBlobs().getOrDefault(fileName, null);
+            String currCommitSha1 = currCommit.getBlobs().getOrDefault(fileName, null);
+            if (currCommitSha1 != null && sha1.equals(commitSha1) && !sha1.equals(currCommitSha1)) {
+                map.put(fileName, currCommitSha1);
+            } else if (commitSha1 != null && !sha1.equals(commitSha1) && sha1.equals(currCommitSha1)) {
+                File file = Utils.join(CWD, fileName);
+                String s = readBlobContentBySha1(commitSha1);
+                Utils.writeContents(file, s);
+                addStage.getBlobs().put(fileName, commitSha1);
+            } else if (commitSha1 != null && commitSha1.equals(currCommitSha1)) {
+                map.put(fileName, currCommitSha1);
+            } else if (commitSha1 == null && currCommitSha1 == null) {
+                continue;
+            } else if (commitSha1 == null && sha1.equals(currCommitSha1)) {
+                File file = Utils.join(CWD, fileName);
+                if (file.exists()) {
+                    file.delete();
+                }
+            } else if (currCommitSha1 == null && sha1.equals(commitSha1)) {
+                continue;
+            } else {
+                Blob blob = new Blob(fileName, generateBlobByMerge(readBlobContentBySha1(currCommitSha1), readBlobContentBySha1(commitSha1)));
+                blob.save();
+                map.put(fileName, blob.getSha1());
+                flag = true;
+            }
+        }
+
+        for (String fileName : commit.getBlobs().keySet()) {
+            String sha1 = ancestor.getBlobs().getOrDefault(fileName, null);
+            if (sha1 != null) continue;
+            String commitSha1 = commit.getBlobs().getOrDefault(fileName, null);
+            String currCommitSha1 = currCommit.getBlobs().getOrDefault(fileName, null);
+            if (currCommitSha1 == null) {
+                File file = Utils.join(CWD, fileName);
+                String s = readBlobContentBySha1(commitSha1);
+                Utils.writeContents(file, s);
+                addStage.getBlobs().put(fileName, commitSha1);
+            } else {
+                if (commitSha1.equals(currCommitSha1)) {
+                    map.put(fileName, currCommitSha1);
+                } else {
+                    Blob blob = new Blob(fileName, generateBlobByMerge(readBlobContentBySha1(currCommitSha1), readBlobContentBySha1(commitSha1)));
+                    blob.save();
+                    map.put(fileName, blob.getSha1());
+                    flag = true;
+                }
+            }
+        }
+
+        for (String fileName : currCommit.getBlobs().keySet()) {
+            String sha1 = ancestor.getBlobs().getOrDefault(fileName, null);
+            if (sha1 != null) continue;
+            String commitSha1 = commit.getBlobs().getOrDefault(fileName, null);
+            String currCommitSha1 = currCommit.getBlobs().getOrDefault(fileName, null);
+            if (commitSha1 == null) {
+                map.put(fileName, currCommitSha1);
+            }
+        }
+
+        String message = String.format("Merged %s into %s", branchName, readCurrBranch());
+        if (flag) {
+            System.out.println("Encountered a merge conflict.");
+        }
+        List<String> parents = new ArrayList<>();
+        parents.add(currCommit.getSha1());
+        parents.add(commit.getSha1());
+        Commit res = new Commit(message, map, parents);
+        return res;
+    }
+
+    private static String generateBlobByMerge(String curr, String target) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<<<<<<< HEAD\n");
+        sb.append(curr + "\n");
+        sb.append("=======\n");
+        sb.append(target +  "\n");
+        sb.append(">>>>>>>");
+        return sb.toString();
+    }
+
+    private static boolean checkUntrackedFileExists(Commit commit, Commit currCommit, Commit ancestor) {
+        for (String fileName : ancestor.getBlobs().keySet()) {
+            String sha1 = ancestor.getBlobs().get(fileName);
+            String commitSha1 = commit.getBlobs().getOrDefault(fileName, null);
+            String currCommitSha1 = currCommit.getBlobs().getOrDefault(fileName, null);
+            if (commitSha1 != null && !sha1.equals(commitSha1) && sha1.equals(currCommitSha1)) {
+                File file = Utils.join(CWD, fileName);
+                if (file.exists()) {
+                    Blob blob = new Blob(fileName);
+                    if (!commitSha1.equals(blob.getSha1())) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        for (String fileName : commit.getBlobs().keySet()) {
+            String sha1 = ancestor.getBlobs().getOrDefault(fileName, null);
+            if (sha1 != null) continue;
+            String commitSha1 = commit.getBlobs().getOrDefault(fileName, null);
+            String currCommitSha1 = currCommit.getBlobs().getOrDefault(fileName, null);
+            if (currCommitSha1 == null) {
+                File file = Utils.join(CWD, fileName);
+                if (file.exists()) {
+                    Blob blob = new Blob(fileName);
+                    if (!commitSha1.equals(blob.getSha1())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static Commit findAncestor(Commit a, Commit b) {
+        Commit p = a, q = b;
+        while (p != q) {
+            if (p == null) {
+                p = b;
+            } else {
+                p = p.findParent();
+            }
+            if (q == null) {
+                q = a;
+            } else {
+                q = q.findParent();
+            }
+        }
+        return p;
+    }
+
+    private static boolean checkUntrackedFileExists(Commit currCommit, Commit targetCommit) {
+        boolean flag = true;
+        List<String> targetFileNames = new ArrayList<>(targetCommit.getBlobs().keySet());
+        Set<String> fileNames = new HashSet<>(currCommit.getBlobs().keySet());
+        for (String s : targetFileNames) {
+            if (fileNames.contains(s))
+                continue;
+            else {
+                File file = getFileFromCWD(s);
+                if (!file.exists()) continue;
+                Blob blob = new Blob(s);
+                if (blob.getSha1() != targetCommit.getBlobs().get(s)) {
+                    flag = false;
+                    break;
+                }
+            }
+        }
+        return flag;
     }
 
     private static String readFullCommitSha1(String commitID) {

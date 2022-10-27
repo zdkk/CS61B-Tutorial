@@ -85,7 +85,17 @@ public class Commit implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("===\ncommit %s\nDate: %s\n%s\n", sha1, timestamp, message);
+        if (parents.size() == 1) {
+            return String.format("===\ncommit %s\nDate: %s\n%s\n", sha1, timestamp, message);
+        } else {
+            StringBuilder sb = new StringBuilder();
+            sb.append("===\n");
+            sb.append(String.format("commit %s\n", sha1));
+            sb.append(String.format("Merge: %s %s\n", parents.get(0).substring(0, 7), parents.get(1).substring(0, 7)));
+            sb.append(String.format("Date: %s\n", timestamp));
+            sb.append(message + "\n");
+            return sb.toString();
+        }
     }
 
     private String generatedSha1() {
