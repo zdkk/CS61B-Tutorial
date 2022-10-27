@@ -497,6 +497,7 @@ public class Repository {
         currCommit = readCurrCommit();
         Commit commit = readCommitBySha1(Utils.readContentsAsString(branchFile));
         Commit ancestor = findAncestor(currCommit, commit);
+
         if (ancestor.getSha1().equals(commit.getSha1())) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
@@ -590,6 +591,7 @@ public class Repository {
         parents.add(currCommit.getSha1());
         parents.add(commit.getSha1());
         Commit res = new Commit(message, map, parents);
+        res.save();
         return res;
     }
 
@@ -639,7 +641,7 @@ public class Repository {
 
     private static Commit findAncestor(Commit a, Commit b) {
         Commit p = a, q = b;
-        while (p != q) {
+        while (!p.getSha1().equals(q.getSha1())) {
             if (p == null) {
                 p = b;
             } else {
