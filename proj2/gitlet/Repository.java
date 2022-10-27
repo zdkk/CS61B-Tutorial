@@ -301,7 +301,6 @@ public class Repository {
         currCommit = readCurrCommit();
         addStage = readAddStage();
         removeStage = readRemoveStage();
-
         Map<String, String> map = new HashMap<>();
 
         for (String fileName : currCommit.getBlobs().keySet()) {
@@ -309,7 +308,7 @@ public class Repository {
             if (!addStage.getBlobs().containsKey(fileName)) {
                 if (file.exists()) {
                     Blob blob = new Blob(fileName);
-                    if (blob.getSha1() != currCommit.getBlobs().get(fileName)) {
+                    if (!blob.getSha1().equals(currCommit.getBlobs().get(fileName))) {
                         map.put(fileName, "(modified)");
                     }
                 }
@@ -325,7 +324,7 @@ public class Repository {
             File file = Utils.join(CWD, fileName);
             if (file.exists()) {
                 Blob blob = new Blob(fileName);
-                if (blob.getSha1() != addStage.getBlobs().get(fileName)) {
+                if (!blob.getSha1().equals(addStage.getBlobs().get(fileName))) {
                     map.put(fileName, "(modified)");
                 }
             } else {
