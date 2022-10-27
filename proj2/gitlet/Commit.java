@@ -85,7 +85,7 @@ public class Commit implements Serializable {
 
     @Override
     public String toString() {
-        if (parents.size() == 1) {
+        if (parents.size() <= 1) {
             return String.format("===\ncommit %s\nDate: %s\n%s\n", sha1, timestamp, message);
         } else {
             StringBuilder sb = new StringBuilder();
