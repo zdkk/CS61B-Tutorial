@@ -585,6 +585,7 @@ public class Repository {
         for (String fileName : map.keySet()) {
             String sha1 = map.get(fileName);
             String s = readBlobContentBySha1(sha1);
+//            System.out.println("588---" + fileName + " " + s);
             Utils.writeContents(Utils.join(CWD, fileName), s);
         }
 
