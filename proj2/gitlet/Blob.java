@@ -10,7 +10,7 @@ public class Blob implements Serializable {
     // file data
     private String bytes;
     // hash(file)
-    private transient String sha1;
+    private String sha1;
 
 
     public Blob(String fileName) {

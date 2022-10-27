@@ -348,9 +348,11 @@ public class Repository {
             System.out.println("File does not exist in that commit.");
             System.exit(0);
         }
-        File targetFile = Utils.join(CWD, "fileName");
+        File targetFile = Utils.join(CWD, fileName);
         File originFile = Utils.join(OBJECTS_DIR, currCommit.getBlobs().get(fileName));
-        Utils.writeContents(targetFile, Utils.readObject(originFile, Blob.class).getBytes());
+
+        Blob blob = Utils.readObject(originFile, Blob.class);
+        Utils.writeContents(targetFile, blob.getBytes());
     }
 
     public static void checkout(String commitID, String mark, String fileName) {
@@ -380,7 +382,7 @@ public class Repository {
             System.out.println("File does not exist in that commit.");
             System.exit(0);
         }
-        File targetFile = Utils.join(CWD, "fileName");
+        File targetFile = Utils.join(CWD, fileName);
         File originFile = Utils.join(OBJECTS_DIR, currCommit.getBlobs().get(fileName));
         Utils.writeContents(targetFile, Utils.readObject(originFile, Blob.class).getBytes());
     }
@@ -448,8 +450,7 @@ public class Repository {
         addStage = readAddStage();
         removeStage = readRemoveStage();
 
-        File saveBlobFile = Utils.join(OBJECTS_DIR, blob.getSha1());
-        save(saveBlobFile, blob.getBytes());
+        blob.save();
         addStage.addBlob(blob);
         if (removeStage.contains(blob)) {
             removeStage.removeBlob(blob);
