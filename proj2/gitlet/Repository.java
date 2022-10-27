@@ -293,7 +293,7 @@ public class Repository {
 
     public static void checkout(String branchName) {
         checkInit();
-        File branchFile = Utils.join(REFS_DIR, branchName);
+        File branchFile = Utils.join(HEADS_DIR, branchName);
         if (!branchFile.exists()) {
             System.out.println("No such branch exists.");
             System.exit(0);
@@ -308,6 +308,19 @@ public class Repository {
         Commit targetCommit = readCommitBySha1(Utils.readContentsAsString(branchFile));
         currCommit = readCurrCommit();
 
+        boolean flag = checkUntrackedFileExists(currCommit, targetCommit);
+        if (!flag) {
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(0);
+        }
+
+        checkoutModifyWorkspace(targetCommit, currCommit);
+        clearStage();
+        currCommit = targetCommit;
+        updateHEAD(branchName);
+    }
+
+    private static boolean checkUntrackedFileExists(Commit currCommit, Commit targetCommit) {
         boolean flag = true;
         List<String> targetFileNames = new ArrayList<>(targetCommit.getBlobs().keySet());
         Set<String> fileNames = new HashSet<>(currCommit.getBlobs().keySet());
@@ -324,16 +337,7 @@ public class Repository {
                 }
             }
         }
-
-        if (!flag) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-            System.exit(0);
-        }
-
-        checkoutModifyWorkspace(targetCommit, currCommit);
-        clearStage();
-        currCommit = targetCommit;
-        updateHEAD(branchName);
+        return flag;
     }
 
     public static void checkout(String mark, String fileName) {
@@ -362,16 +366,8 @@ public class Repository {
         }
         checkInit();
         fileName = unifiedFileName(fileName);
-        List<String> files = plainFilenamesIn(OBJECTS_DIR);
-        String res = null;
-        int len = commitID.length();
-        for (String s : files) {
-            if (commitID.equals(s.substring(0, len))) {
-                res = s;
-                break;
-            }
-        }
 
+        String res = readFullCommitSha1(commitID);
         if (res == null) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
@@ -385,6 +381,72 @@ public class Repository {
         File targetFile = Utils.join(CWD, fileName);
         File originFile = Utils.join(OBJECTS_DIR, commit.getBlobs().get(fileName));
         Utils.writeContents(targetFile, Utils.readObject(originFile, Blob.class).getBytes());
+    }
+
+    public static void branch(String branchName) {
+        checkInit();
+        File branchFile = Utils.join(HEADS_DIR, branchName);
+        if (branchFile.exists()) {
+            System.out.println("A branch with that name already exists.");
+            System.exit(0);
+        }
+        currCommit = readCurrCommit();
+        Utils.writeContents(branchFile, currCommit.getSha1());
+    }
+
+    public static void rmBranch(String branchName) {
+        checkInit();
+        File branchFile = Utils.join(HEADS_DIR, branchName);
+        if (!branchFile.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+
+        String currBranchName = readCurrBranch();
+        if (branchFile.getName().equals(currBranchName)) {
+            System.out.println("Cannot remove the current branch.");
+            System.exit(0);
+        }
+        branchFile.delete();
+    }
+
+    public static void reset(String commitID) {
+        checkInit();
+        commitID = readFullCommitSha1(commitID);
+        if (commitID == null) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+        Commit targetCommit = readCommitBySha1(commitID);
+        currCommit = readCurrCommit();
+
+        boolean flag = checkUntrackedFileExists(currCommit, targetCommit);
+        if (!flag) {
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(0);
+        }
+
+        checkoutModifyWorkspace(targetCommit, currCommit);
+        clearStage();
+        currCommit = targetCommit;
+        updateCurrBranch();
+    }
+
+    private static String readFullCommitSha1(String commitID) {
+        if (commitID.length() > Commit.SHA1_LENGTH) return null;
+        List<String> files = plainFilenamesIn(OBJECTS_DIR);
+        String res = null;
+        int len = commitID.length();
+        for (String s : files) {
+            if (commitID.equals(s.substring(0, len))) {
+                Serializable serializable = Utils.readObject(Utils.join(OBJECTS_DIR, s), Serializable.class);
+                if (serializable instanceof Commit) {
+                    res = s;
+                    break;
+                }
+            }
+        }
+        return res;
     }
 
     private static void clearStage() {

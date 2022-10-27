@@ -12,7 +12,7 @@ import java.util.*;
  * @author zdkk
  */
 public class Commit implements Serializable {
-
+    public static final int SHA1_LENGTH = 40;
     /** The message of this Commit. */
     private String message;
     // filename-sha1

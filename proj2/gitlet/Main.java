@@ -68,18 +68,18 @@ public class Main {
                      System.exit(0);
                  }
                  break;
-            // case "branch":
-            //     checkargs(args, 2);
-            //     branch(args[1]);
-            //     break;
-            // case "rm-branch":
-            //     checkargs(args, 2);
-            //     rmBranch(args[1]);
-            //     break;
-            // case "reset":
-            //     checkargs(args, 2);
-            //     reset(args[1]);
-            //     break;
+             case "branch":
+                 checkargs(args, 2);
+                 branch(args[1]);
+                 break;
+             case "rm-branch":
+                 checkargs(args, 2);
+                 rmBranch(args[1]);
+                 break;
+             case "reset":
+                 checkargs(args, 2);
+                 reset(args[1]);
+                 break;
             // case "merge":
             //     checkargs(args, 2);
             //     merge(args[1]);
