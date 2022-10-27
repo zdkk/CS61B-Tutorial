@@ -383,7 +383,7 @@ public class Repository {
             System.exit(0);
         }
         File targetFile = Utils.join(CWD, fileName);
-        File originFile = Utils.join(OBJECTS_DIR, currCommit.getBlobs().get(fileName));
+        File originFile = Utils.join(OBJECTS_DIR, commit.getBlobs().get(fileName));
         Utils.writeContents(targetFile, Utils.readObject(originFile, Blob.class).getBytes());
     }
 
