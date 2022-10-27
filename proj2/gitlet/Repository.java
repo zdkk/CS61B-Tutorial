@@ -583,7 +583,7 @@ public class Repository {
             }
         }
 
-        String message = String.format("Merged %s into %s", branchName, readCurrBranch());
+        String message = String.format("Merged %s into %s.", branchName, readCurrBranch());
         if (flag) {
             System.out.println("Encountered a merge conflict.");
         }
