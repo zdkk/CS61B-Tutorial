@@ -505,6 +505,7 @@ public class Repository {
         if (ancestor.getSha1().equals(currCommit.getSha1())) {
             currCommit = commit;
             updateCurrBranch();
+            checkout(branchName);
             System.out.println("Current branch fast-forwarded.");
             System.exit(0);
         }
@@ -622,20 +623,39 @@ public class Repository {
 
 
     private static Commit findAncestor(Commit a, Commit b) {
-        Commit p = a, q = b;
-        while (p == null && q != null || p != null && q == null || !p.getSha1().equals(q.getSha1())) {
-            if (p == null) {
-                p = b;
-            } else {
-                p = p.findParent();
-            }
-            if (q == null) {
-                q = a;
-            } else {
-                q = q.findParent();
+        Set<String> aParents = getParents(a);
+        Set<String> bParents = getParents(b);
+        String res = null;
+        for (String s : aParents) {
+            if (bParents.contains(s)) {
+                if (res == null) {
+                    res = s;
+                } else {
+                    File resFile = Utils.join(OBJECTS_DIR, res);
+                    File file = Utils.join(OBJECTS_DIR, s);
+                    if (resFile.lastModified() < file.lastModified()) {
+                        res = s;
+                    }
+                }
             }
         }
-        return p;
+        return readCommitBySha1(res);
+    }
+
+    private static Set<String> getParents(Commit a) {
+        Set<String> set = new HashSet<>();
+        Queue<String> q = new LinkedList<>();
+        for (String s : a.getParents()) {
+            q.offer(s);
+        }
+        while (!q.isEmpty()) {
+            String sha1 = q.poll();
+            Commit commit = readCommitBySha1(sha1);
+            for (String s : commit.getParents()) {
+                q.offer(s);
+            }
+        }
+        return set;
     }
 
     private static boolean checkUntrackedFileExists(Commit currCommit, Commit targetCommit) {
