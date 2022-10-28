@@ -489,9 +489,9 @@ public class Repository {
         String s = readBlobContentBySha1(sha1);
         Utils.writeContents(file, s);
     }
-    private static boolean dealMerge(Commit a, Commit b, Commit c, String ss) {
-        Map<String, String> map = new HashMap<>();
-        Set<String> set = new HashSet<>();
+
+    private static boolean subDealMerge(Commit a, Commit b, Commit c,
+                                        Map<String, String> map, Set<String> set, boolean[] bool) {
         boolean flag = false;
         for (String fileName : c.getBlobs().keySet()) {
             String sha1 = c.getBlobs().get(fileName);
@@ -557,7 +557,21 @@ public class Repository {
                 }
             }
         }
+        bool[0] = flag;
+        return true;
+    }
+    private static boolean dealMerge(Commit a, Commit b, Commit c, String ss) {
+        Map<String, String> map = new HashMap<>();
+        Set<String> set = new HashSet<>();
+        boolean[] bool = new boolean[1];
 
+        if (!subDealMerge(a, b, c, map, set, bool)) {
+            return false;
+        }
+        boolean flag = bool[0];
+        if (flag) {
+            System.out.println("Encountered a merge conflict.");
+        }
         for (String fileName : map.keySet()) {
             String sha1 = map.get(fileName);
             String s = readBlobContentBySha1(sha1);
@@ -569,11 +583,7 @@ public class Repository {
                 file.delete();
             }
         }
-
         String message = String.format("Merged %s into %s.", ss, readCurrBranch());
-        if (flag) {
-            System.out.println("Encountered a merge conflict.");
-        }
         if (addStage.getBlobs().isEmpty() && removeStage.getBlobs().isEmpty()) {
             System.out.println("No changes added to the commit.");
         }
