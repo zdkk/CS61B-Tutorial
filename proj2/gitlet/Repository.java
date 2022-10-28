@@ -617,7 +617,7 @@ public class Repository {
                 curr + "\n" +
                 "=======\n" +
                 target + "\n" +
-                ">>>>>>>";
+                ">>>>>>>\n";
         return s;
     }
 
