@@ -503,11 +503,7 @@ public class Repository {
             System.exit(0);
         }
         if (ancestor.getSha1().equals(currCommit.getSha1())) {
-            currCommit = commit;
-            updateCurrBranch();
-            checkout(branchName);
             System.out.println("Current branch fast-forwarded.");
-            System.exit(0);
         }
         boolean flag = dealMerge(commit, currCommit, ancestor, branchName);
         if (!flag) {
