@@ -613,12 +613,7 @@ public class Repository {
     }
 
     private static String generateBlobByMerge(String curr, String target) {
-        String s = "<<<<<<< HEAD\n" +
-                curr + "\n" +
-                "=======\n" +
-                target + "\n" +
-                ">>>>>>>\n";
-        return s;
+        return "<<<<<<< HEAD\n" + curr + "=======\n" + target + ">>>>>>>\n";
     }
 
 
