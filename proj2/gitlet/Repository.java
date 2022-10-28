@@ -650,6 +650,7 @@ public class Repository {
         }
         while (!q.isEmpty()) {
             String sha1 = q.poll();
+            set.add(sha1);
             Commit commit = readCommitBySha1(sha1);
             for (String s : commit.getParents()) {
                 q.offer(s);
