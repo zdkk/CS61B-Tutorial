@@ -4,9 +4,6 @@ import java.io.File;
 import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.*;
-import gitlet.GitletException;
-import gitlet.Stage;
-import gitlet.Commit;
 
 import static gitlet.Utils.*;
 
@@ -48,10 +45,10 @@ public class Repository {
     public static final File ADD_STAGE_FILE = join(GITLET_DIR, "add_stage");
     public static final File REMOVE_STAGE_FILE = join(GITLET_DIR, "remove_stage");
 
-    public static Commit currCommit;
+    private static Commit currCommit;
 
-    public static Stage addStage;
-    public static Stage removeStage;
+    private static Stage addStage;
+    private static Stage removeStage;
 
 
     /**
@@ -73,7 +70,8 @@ public class Repository {
      */
     public static void init() {
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            String s = "A Gitlet version-control system already exists in the current directory.";
+            System.out.println(s);
             System.exit(0);
         }
         mkdir(GITLET_DIR);
@@ -119,16 +117,6 @@ public class Repository {
     }
 
     /**
-     * Saves a snapshot of tracked files in the current commit and staging area so they can be
-     * restored at a later time, creating a new commit. The commit is said to be tracking the saved files.
-     * By default, each commit’s snapshot of files will be exactly the same as its parent commit’s snapshot
-     * of files; it will keep versions of files exactly as they are, and not update them. A commit will only
-     * update the contents of files it is tracking that have been staged for addition at the time of commit,
-     * in which case the commit will now include the version of the file that was staged instead of the version
-     * it got from its parent. A commit will save and start tracking any files that were staged for addition but
-     * weren’t tracked by its parent. Finally, files tracked in the current commit may be untracked in the new
-     * commit as a result being staged for removal by the rm command (below).
-     * Note: If stage is empty, print "No changes added to the commit."
      * @param message: log message
      */
     public static void commit(String message) {
@@ -153,9 +141,6 @@ public class Repository {
     }
 
     /**
-     * Unstage the file if it is currently staged for addition. If the file is tracked in the current commit, stage it
-     * for removal and remove the file from the working directory if the user has not already done so (do not remove it
-     * unless it is tracked in the current commit).
      * Note:If the file is neither staged nor tracked by the head commit, print the error message
      * "No reason to remove the file."
      * @param name
@@ -188,13 +173,6 @@ public class Repository {
         save(REMOVE_STAGE_FILE, removeStage);
     }
 
-    /**
-     * Starting at the current head commit, display information about each commit backwards along the commit tree until
-     * the initial commit, following the first parent commit links, ignoring any second parents found in merge commits.
-     * (In regular Git, this is what you get with git log --first-parent). This set of commit nodes is called the
-     * commit’s history. For every node in this history, the information it should display is the commit id, the time
-     * the commit was made, and the commit message.
-     */
     public static void log() {
         checkInit();
 
@@ -205,10 +183,6 @@ public class Repository {
         }
     }
 
-    /**
-     * Like log, except displays information about all commits ever made. The order of the commits does not matter.
-     * Hint: there is a useful method in gitlet.Utils that will help you iterate over files within a directory.
-     */
     public static void globalLog() {
         checkInit();
 
@@ -224,11 +198,8 @@ public class Repository {
     }
 
     /**
-     * Prints out the ids of all commits that have the given commit message, one per line. If there are multiple such
-     * commits, it prints the ids out on separate lines. The commit message is a single operand; to indicate a multiword
-     * message, put the operand in quotation marks, as for the commit command below. Hint: the hint for this command is
-     * the same as the one for global-log.
-     * Note:If no such commit exists, prints the error message "Found no commit with that message."
+     * Note:
+     * If no such commit exists, prints the error message "Found no commit with that message."
      */
     public static void find(String message) {
         checkInit();
@@ -251,11 +222,6 @@ public class Repository {
         }
     }
 
-    /**
-     * Displays what branches currently exist, and marks the current branch with a *. Also displays what files have been
-     * staged for addition or removal. An example of the exact format it should follow is as follows.
-     * Note:There is an empty line between sections, and the entire status ends in an empty line as well.
-     */
     public static void status() {
         checkInit();
 
@@ -268,7 +234,9 @@ public class Repository {
         for (String s : branch) {
             if (s.equals(currBranch)) {
                 System.out.println("*" + s);
-            } else System.out.println(s);
+            } else {
+                System.out.println(s);
+            }
         }
         System.out.println();
         System.out.println("=== Staged Files ===");
@@ -346,7 +314,8 @@ public class Repository {
 
         List<String> res = new ArrayList<>();
         for (String fileName : Utils.plainFilenamesIn(CWD)) {
-            if (!addStage.getBlobs().containsKey(fileName) && !currCommit.getBlobs().containsKey(fileName)) {
+            if (!addStage.getBlobs().containsKey(fileName)
+                    && !currCommit.getBlobs().containsKey(fileName)) {
                 res.add(fileName);
             } else if (removeStage.getBlobs().containsKey(fileName)) {
                 res.add(fileName);
@@ -374,7 +343,8 @@ public class Repository {
 
         boolean flag = checkUntrackedFileExists(currCommit, targetCommit);
         if (!flag) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.out.println("There is an untracked file in the way; " +
+                    "delete it, or add and commit it first.");
             System.exit(0);
         }
 
@@ -466,7 +436,8 @@ public class Repository {
 
         boolean flag = checkUntrackedFileExists(currCommit, targetCommit);
         if (!flag) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.out.println("There is an untracked file in the way; " +
+                    "delete it, or add and commit it first.");
             System.exit(0);
         }
 
@@ -507,7 +478,8 @@ public class Repository {
         }
         boolean flag = dealMerge(commit, currCommit, ancestor, branchName);
         if (!flag) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.out.println("There is an untracked file in the way; " +
+                    "delete it, or add and commit it first.");
             System.exit(0);
         }
     }
@@ -517,7 +489,8 @@ public class Repository {
         String s = readBlobContentBySha1(sha1);
         Utils.writeContents(file, s);
     }
-    private static boolean dealMerge(Commit commit, Commit currCommit, Commit ancestor, String branchName) {
+    private static boolean dealMerge(Commit commit, Commit currCommit,
+                                     Commit ancestor, String branchName) {
         Map<String, String> map = new HashMap<>();
         Set<String> set = new HashSet<>();
         boolean flag = false;
@@ -525,9 +498,11 @@ public class Repository {
             String sha1 = ancestor.getBlobs().get(fileName);
             String commitSha1 = commit.getBlobs().getOrDefault(fileName, null);
             String currCommitSha1 = currCommit.getBlobs().getOrDefault(fileName, null);
-            if (currCommitSha1 != null && sha1.equals(commitSha1) && !sha1.equals(currCommitSha1)) {
+            if (currCommitSha1 != null && sha1.equals(commitSha1)
+                    && !sha1.equals(currCommitSha1)) {
                 map.put(fileName, currCommitSha1);
-            } else if (commitSha1 != null && !sha1.equals(commitSha1) && sha1.equals(currCommitSha1)) {
+            } else if (commitSha1 != null && !sha1.equals(commitSha1)
+                    && sha1.equals(currCommitSha1)) {
                 map.put(fileName, commitSha1);
                 addStage.getBlobs().put(fileName, commitSha1);
             } else if (commitSha1 != null && commitSha1.equals(currCommitSha1)) {
@@ -544,7 +519,8 @@ public class Repository {
                 String s2 = commitSha1 == null ? "" : readBlobContentBySha1(commitSha1);
                 Blob blob = new Blob(fileName, generateBlobByMerge(s1, s2));
                 File file = Utils.join(CWD, fileName);
-                if (file.exists() && currCommitSha1 == null && !blob.getSha1().equals(commitSha1)) {
+                if (file.exists() && currCommitSha1 == null
+                        && !blob.getSha1().equals(commitSha1)) {
                     return false;
                 }
                 blob.save();
@@ -556,7 +532,9 @@ public class Repository {
 
         for (String fileName : commit.getBlobs().keySet()) {
             String sha1 = ancestor.getBlobs().getOrDefault(fileName, null);
-            if (sha1 != null) continue;
+            if (sha1 != null) {
+                continue;
+            }
             String commitSha1 = commit.getBlobs().getOrDefault(fileName, null);
             String currCommitSha1 = currCommit.getBlobs().getOrDefault(fileName, null);
             if (currCommitSha1 == null) {
@@ -570,7 +548,9 @@ public class Repository {
                 if (commitSha1.equals(currCommitSha1)) {
                     map.put(fileName, currCommitSha1);
                 } else {
-                    Blob blob = new Blob(fileName, generateBlobByMerge(readBlobContentBySha1(currCommitSha1), readBlobContentBySha1(commitSha1)));
+                    Blob blob = new Blob(fileName,
+                            generateBlobByMerge(readBlobContentBySha1(currCommitSha1),
+                                    readBlobContentBySha1(commitSha1)));
                     blob.save();
                     map.put(fileName, blob.getSha1());
                     addStage.getBlobs().put(fileName, blob.getSha1());
@@ -658,11 +638,13 @@ public class Repository {
         List<String> targetFileNames = new ArrayList<>(targetCommit.getBlobs().keySet());
         Set<String> fileNames = new HashSet<>(currCommit.getBlobs().keySet());
         for (String s : targetFileNames) {
-            if (fileNames.contains(s))
+            if (fileNames.contains(s)) {
                 continue;
-            else {
+            } else {
                 File file = getFileFromCWD(s);
-                if (!file.exists()) continue;
+                if (!file.exists()) {
+                    continue;
+                }
                 Blob blob = new Blob(s);
                 if (blob.getSha1() != targetCommit.getBlobs().get(s)) {
                     flag = false;
@@ -680,7 +662,8 @@ public class Repository {
         int len = commitID.length();
         for (String s : files) {
             if (commitID.equals(s.substring(0, len))) {
-                Serializable serializable = Utils.readObject(Utils.join(OBJECTS_DIR, s), Serializable.class);
+                Serializable serializable = Utils.readObject(Utils.join(OBJECTS_DIR, s),
+                        Serializable.class);
                 if (serializable instanceof Commit) {
                     res = s;
                     break;
@@ -787,20 +770,24 @@ public class Repository {
     }
 
     private static Stage readAddStage() {
-        if (!ADD_STAGE_FILE.exists())
+        if (!ADD_STAGE_FILE.exists()) {
             return new Stage();
+        }
         return readObject(ADD_STAGE_FILE, Stage.class);
     }
 
     private static Stage readRemoveStage() {
-        if (!REMOVE_STAGE_FILE.exists())
+        if (!REMOVE_STAGE_FILE.exists()) {
             return new Stage();
+        }
         return readObject(REMOVE_STAGE_FILE, Stage.class);
     }
 
     private static void mkdir(File file) {
-        if (!file.mkdir())
-            throw new IllegalArgumentException(String.format("mkdir: %s \nFailed to create!", file.getPath()));
+        if (!file.mkdir()) {
+            throw new IllegalArgumentException(String.format("mkdir: %s \nFailed to create!",
+                    file.getPath()));
+        }
     }
 
     private static void initCommit() {

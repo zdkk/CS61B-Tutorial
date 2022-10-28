@@ -78,7 +78,9 @@ public class Commit implements Serializable {
     }
 
     public Commit findParent() {
-        if (parents.isEmpty()) return null;
+        if (parents.isEmpty()) {
+            return null;
+        }
         File parentFile = Utils.join(Repository.OBJECTS_DIR, parents.get(0));
         return Utils.readObject(parentFile, this.getClass());
     }
@@ -91,7 +93,9 @@ public class Commit implements Serializable {
             StringBuilder sb = new StringBuilder();
             sb.append("===\n");
             sb.append(String.format("commit %s\n", sha1));
-            sb.append(String.format("Merge: %s %s\n", parents.get(0).substring(0, 7), parents.get(1).substring(0, 7)));
+            String a = parents.get(0).substring(0, 7);
+            String b = parents.get(1).substring(0, 7);
+            sb.append(String.format("Merge: %s %s\n", a, b));
             sb.append(String.format("Date: %s\n", timestamp));
             sb.append(message + "\n");
             return sb.toString();
