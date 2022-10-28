@@ -522,6 +522,7 @@ public class Repository {
     }
     private static boolean dealMerge(Commit commit, Commit currCommit, Commit ancestor, String branchName) {
         Map<String, String> map = new HashMap<>();
+        Set<String> set = new HashSet<>();
         boolean flag = false;
         for (String fileName : ancestor.getBlobs().keySet()) {
             String sha1 = ancestor.getBlobs().get(fileName);
@@ -537,10 +538,7 @@ public class Repository {
             } else if (commitSha1 == null && currCommitSha1 == null) {
                 continue;
             } else if (commitSha1 == null && sha1.equals(currCommitSha1)) {
-                File file = Utils.join(CWD, fileName);
-                if (file.exists()) {
-                    file.delete();
-                }
+                set.add(fileName);
                 removeStage.getBlobs().put(fileName, currCommitSha1);
             } else if (currCommitSha1 == null && sha1.equals(commitSha1)) {
                 continue;
@@ -588,6 +586,12 @@ public class Repository {
             String sha1 = map.get(fileName);
             String s = readBlobContentBySha1(sha1);
             Utils.writeContents(Utils.join(CWD, fileName), s);
+        }
+        for (String fileName : set) {
+            File file = Utils.join(CWD, fileName);
+            if (file.exists()) {
+                file.delete();
+            }
         }
 
         String message = String.format("Merged %s into %s.", branchName, readCurrBranch());
