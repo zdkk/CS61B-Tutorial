@@ -645,9 +645,7 @@ public class Repository {
     private static Set<String> getParents(Commit a) {
         Set<String> set = new HashSet<>();
         Queue<String> q = new LinkedList<>();
-        for (String s : a.getParents()) {
-            q.offer(s);
-        }
+        q.offer(a.getSha1());
         while (!q.isEmpty()) {
             String sha1 = q.poll();
             set.add(sha1);
