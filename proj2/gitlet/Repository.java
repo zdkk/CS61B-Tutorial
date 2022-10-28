@@ -545,7 +545,9 @@ public class Repository {
             } else if (currCommitSha1 == null && sha1.equals(commitSha1)) {
                 continue;
             } else {
-                Blob blob = new Blob(fileName, generateBlobByMerge(readBlobContentBySha1(currCommitSha1), readBlobContentBySha1(commitSha1)));
+                String s1 = currCommitSha1 == null ? "" : readBlobContentBySha1(currCommitSha1);
+                String s2 = commitSha1 == null ? "" : readBlobContentBySha1(commitSha1);
+                Blob blob = new Blob(fileName, generateBlobByMerge(s1, s2));
                 File file = Utils.join(CWD, fileName);
                 if (file.exists() && currCommitSha1 == null && !blob.getSha1().equals(commitSha1)) {
                     return false;
@@ -585,7 +587,6 @@ public class Repository {
         for (String fileName : map.keySet()) {
             String sha1 = map.get(fileName);
             String s = readBlobContentBySha1(sha1);
-//            System.out.println("588---" + fileName + " " + s);
             Utils.writeContents(Utils.join(CWD, fileName), s);
         }
 
@@ -616,7 +617,7 @@ public class Repository {
                 curr + "\n" +
                 "=======\n" +
                 target + "\n" +
-                ">>>>>>>";
+                ">>>>>>>\n";
         return s;
     }
 
